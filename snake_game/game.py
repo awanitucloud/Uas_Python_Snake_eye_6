@@ -1,6 +1,7 @@
 # game.py
 import pygame
 import sys
+import os
 from config import *
 from snake import Snake
 from food import Food
@@ -11,9 +12,14 @@ class Game:
         pygame.display.set_caption("Game Ular Klasik")
         self.clock = pygame.time.Clock()
 
-        pygame.font.init()  # ✅ Inisialisasi modul font
-        self.font = pygame.font.SysFont('Arial', 20)
-        self.big_font = pygame.font.SysFont('Arial', 40)
+        pygame.font.init()
+        self.font = pygame.font.Font(None, 20)
+        self.big_font = pygame.font.Font(None, 40)
+
+        # ✅ Load background image
+        base_path = os.path.join(os.path.dirname(__file__), "assets")
+        self.background = pygame.image.load(os.path.join(base_path, "background.png")).convert()
+        self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
 
         self.snake = Snake()
         self.food = Food()
@@ -95,8 +101,12 @@ class Game:
                     if self.snake.score > self.high_score:
                         self.high_score = self.snake.score
 
-            self.screen.fill(BLACK)
-            self.draw_grid()
+            # ✅ Tampilkan background
+            self.screen.blit(self.background, (0, 0))
+
+            # Optional: aktifkan grid jika ingin melihat batas kotak
+            # self.draw_grid()
+
             self.snake.draw(self.screen)
             self.food.draw(self.screen)
             self.draw_score()
