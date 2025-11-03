@@ -10,7 +10,7 @@ WIDTH, HEIGHT = 600, 600
 GRID_SIZE = 20
 GRID_WIDTH = WIDTH // GRID_SIZE
 GRID_HEIGHT = HEIGHT // GRID_SIZE
-FPS = 10  # Kecepatan game (tidak terlalu cepat)
+FPS = 10  # Kecepatan dasar
 
 # Warna
 BLACK = (0, 0, 0)
@@ -36,7 +36,6 @@ class Snake:
         self.positions = [(GRID_WIDTH // 2, GRID_HEIGHT // 2)]
         self.direction = RIGHT
         self.score = 0
-        # Tambahkan bagian tubuh awal
         for i in range(1, self.length):
             self.positions.append((self.positions[0][0] - i, self.positions[0][1]))
     
@@ -44,7 +43,6 @@ class Snake:
         return self.positions[0]
     
     def turn(self, point):
-        # Mencegah ular berbalik ke arah berlawanan
         if self.length > 1 and (point[0] * -1, point[1] * -1) == self.direction:
             return
         else:
@@ -57,9 +55,8 @@ class Snake:
         new_y = (head[1] + y) % GRID_HEIGHT
         new_position = (new_x, new_y)
         
-        # Cek tabrakan dengan tubuh sendiri
         if new_position in self.positions[1:]:
-            return False  # Game over
+            return False
         
         self.positions.insert(0, new_position)
         if len(self.positions) > self.length:
@@ -68,13 +65,7 @@ class Snake:
     
     def draw(self, surface):
         for i, p in enumerate(self.positions):
-            # Buat kepala ular dengan warna berbeda
-            if i == 0:
-                color = GREEN
-            else:
-                # Gradasi warna untuk tubuh ular
-                color = (0, 200 - (i * 2) % 100, 0)
-            
+            color = GREEN if i == 0 else (0, 200 - (i * 2) % 100, 0)
             rect = pygame.Rect((p[0] * GRID_SIZE, p[1] * GRID_SIZE), (GRID_SIZE, GRID_SIZE))
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, DARK_GREEN, rect, 1)
@@ -107,7 +98,13 @@ class Game:
         self.food = Food()
         self.high_score = 0
         self.game_over = False
-        
+        self.level = 1
+        self.speed = FPS
+    
+    def update_level(self):
+        self.level = self.snake.score // 50 + 1
+        self.speed = FPS + (self.level - 1) * 2
+    
     def draw_grid(self):
         for x in range(0, WIDTH, GRID_SIZE):
             for y in range(0, HEIGHT, GRID_SIZE):
@@ -117,8 +114,10 @@ class Game:
     def draw_score(self):
         score_text = self.font.render(f'Skor: {self.snake.score}', True, WHITE)
         high_score_text = self.font.render(f'Skor Tertinggi: {self.high_score}', True, WHITE)
+        level_text = self.font.render(f'Level: {self.level}', True, WHITE)
         self.screen.blit(score_text, (10, 10))
         self.screen.blit(high_score_text, (WIDTH - high_score_text.get_width() - 10, 10))
+        self.screen.blit(level_text, (WIDTH // 2 - level_text.get_width() // 2, 10))
     
     def draw_game_over(self):
         game_over_text = self.big_font.render('GAME OVER', True, RED)
@@ -127,7 +126,6 @@ class Game:
         self.screen.blit(restart_text, (WIDTH // 2 - restart_text.get_width() // 2, HEIGHT // 2 + 10))
     
     def check_win(self):
-        # Jika ular memenuhi seluruh halaman, game selesai
         return self.snake.length == GRID_WIDTH * GRID_HEIGHT
     
     def draw_win(self):
@@ -144,10 +142,11 @@ class Game:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
                     if self.game_over and event.key == pygame.K_SPACE:
-                        # Reset game
                         self.snake.reset()
                         self.food.randomize_position()
                         self.game_over = False
+                        self.level = 1
+                        self.speed = FPS
                     elif event.key == pygame.K_UP:
                         self.snake.turn(UP)
                     elif event.key == pygame.K_DOWN:
@@ -158,38 +157,29 @@ class Game:
                         self.snake.turn(RIGHT)
             
             if not self.game_over:
-                # Gerakkan ular
                 if not self.snake.move():
                     self.game_over = True
                     if self.snake.score > self.high_score:
                         self.high_score = self.snake.score
                 
-                # Cek jika ular memakan makanan
                 if self.snake.get_head_position() == self.food.position:
                     self.snake.grow()
                     self.food.randomize_position()
-                    # Pastikan makanan tidak muncul di tubuh ular
                     while self.food.position in self.snake.positions:
                         self.food.randomize_position()
+                    self.update_level()
                 
-                # Cek jika ular memenuhi seluruh halaman
                 if self.check_win():
                     self.game_over = True
                     if self.snake.score > self.high_score:
                         self.high_score = self.snake.score
             
-            # Gambar background
             self.screen.fill(BLACK)
             self.draw_grid()
-            
-            # Gambar ular dan makanan
             self.snake.draw(self.screen)
             self.food.draw(self.screen)
-            
-            # Gambar skor
             self.draw_score()
             
-            # Gambar game over atau win screen
             if self.game_over:
                 if self.check_win():
                     self.draw_win()
@@ -197,7 +187,7 @@ class Game:
                     self.draw_game_over()
             
             pygame.display.update()
-            self.clock.tick(FPS)
+            self.clock.tick(self.speed)
 
 if __name__ == "__main__":
     game = Game()
