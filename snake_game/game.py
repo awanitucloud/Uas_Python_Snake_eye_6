@@ -10,8 +10,11 @@ class Game:
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Game Ular Klasik")
         self.clock = pygame.time.Clock()
+
+        pygame.font.init()  # ✅ Inisialisasi modul font
         self.font = pygame.font.SysFont('Arial', 20)
         self.big_font = pygame.font.SysFont('Arial', 40)
+
         self.snake = Snake()
         self.food = Food()
         self.high_score = 0
